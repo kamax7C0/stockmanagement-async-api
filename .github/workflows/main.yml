@@ -1,0 +1,32 @@
+# This workflow will sync the asyncapi definition with Confluent Kafka Topics
+name: Sync Topics Pipeline
+on:
+    workflow_dispatch:
+jobs:  
+    sync:
+        runs-on: ubuntu-latest
+        container: 
+            image: confluentinc/confluent-cli:latest
+            options: --user root
+        env:
+          CONFLUENT_CLOUD_EMAIL: "${{ secrets.CONFLUENT_CLOUD_EMAIL }}"
+          CONFLUENT_CLOUD_PASSWORD: "${{ secrets.CONFLUENT_CLOUD_PASSWORD }}"
+        steps:  
+            - 
+                uses: actions/checkout@v3
+            - 
+                name: CRUD the Kafka Topics and Schemes
+                id: confluent_sync
+                run:   |
+                  confluent login
+                  confluent kafka cluster use "${{ secrets.CONFLUENT_CLUSTER_ID }}"
+                  confluent api-key store "${{ secrets.CONFLUENT_API_KEY }}" "${{ secrets.CONFLUENT_API_SECRET }}" \
+                                        --resource "${{ secrets.CONFLUENT_CLUSTER_ID }}"
+                  confluent api-key use "${{ secrets.CONFLUENT_API_KEY }}" \
+                                        --resource "${{ secrets.CONFLUENT_CLUSTER_ID }}"
+                  confluent schema-registry cluster enable --package essentials --cloud aws --geo eu
+                  confluent asyncapi import --file stockmanagement-async-api.yaml \
+                                            --overwrite \
+                                            --kafka-api-key "${{ secrets.CONFLUENT_API_KEY }}" \
+                                            --schema-registry-api-key "${{ secrets.CONFLUENT_SCHEMA_REGISTRY_API_KEY }}" \
+                                            --schema-registry-api-secret "${{ secrets.CONFLUENT_SCHEMA_REGISTRY_API_SECRET }}"
