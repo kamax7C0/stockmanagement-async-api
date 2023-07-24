@@ -1,0 +1,63 @@
+asyncapi: 2.0.0
+info:
+  title: API Document for Confluent Cluster
+  version: 1.0.0
+servers:
+  cluster:
+    url: https://pkc-zpjg0.eu-central-1.aws.confluent.cloud:443
+    description: Confluent Kafka instance.
+    protocol: kafka
+    security:
+    - confluentBroker: []
+  schema-registry:
+    url: https://psrc-p6o1m.eu-central-1.aws.confluent.cloud
+    description: Confluent Kafka Schema Registry Server
+    protocol: kafka
+    security:
+    - confluentSchemaRegistry: []
+channels:
+  Order-Notifications:
+    subscribe:
+      operationId: OrderNotificationsSubscribe
+      bindings:
+        kafka:
+          bindingVersion: 0.3.0
+          groupId:
+            type: string
+          clientId:
+            type: string
+      message:
+        $ref: '#/components/messages/OrderNotificationsMessage'
+    x-messageCompatibility: BACKWARD
+components:
+  messages:
+    OrderNotificationsMessage:
+      schemaFormat: application/schema+json;version=draft-07
+      contentType: application/json
+      payload:
+        $id: http://example.com/myURI.schema.json
+        $schema: http://json-schema.org/draft-07/schema#
+        additionalProperties: false
+        description: Sample schema to help you get started with Order Notifications.
+        properties:
+          orderId:
+            description: Order ID.
+            type: string
+          status:
+            description: Order Status.
+            type: string
+        title: OrderNotificationsSample
+        type: object
+      name: OrderNotificationsMessage
+  securitySchemes:
+    confluentBroker:
+      type: userPassword
+      x-configs:
+        sasl.mechanisms: PLAIN
+        sasl.password: '{{CLUSTER_API_SECRET}}'
+        sasl.username: '{{CLUSTER_API_KEY}}'
+        security.protocol: sasl_ssl
+    confluentSchemaRegistry:
+      type: userPassword
+      x-configs:
+        basic.auth.user.info: '{{SCHEMA_REGISTRY_API_KEY}}:{{SCHEMA_REGISTRY_API_SECRET}}'
